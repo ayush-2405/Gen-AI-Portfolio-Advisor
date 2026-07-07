@@ -1,5 +1,3 @@
-# ai/portfolio_context.py
-
 import json
 
 
@@ -14,6 +12,10 @@ def build_context(
     diversification,
 
     benchmark,
+
+    news_sentiment=None,
+
+    investment_quality=None,
 
 ):
 
@@ -42,6 +44,14 @@ def build_context(
         "benchmark":
 
             benchmark,
+
+        "news_sentiment":
+
+            news_sentiment or {},
+
+        "investment_quality":
+
+            investment_quality or {},
 
     }
 

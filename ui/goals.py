@@ -1,5 +1,3 @@
-# ui/goals.py
-
 import streamlit as st
 
 from analytics.goals import (
@@ -16,6 +14,8 @@ from analytics.goals import (
 def goals_page(
 
     portfolio_value,
+
+    currency="$",
 
 ):
 
@@ -95,7 +95,7 @@ def goals_page(
 
         "Future Value",
 
-        f"${fv:,.0f}",
+        f"{currency}{fv:,.0f}",
 
     )
 
@@ -111,6 +111,6 @@ def goals_page(
 
         "Monthly Investment",
 
-        f"${sip:,.2f}",
+        f"{currency}{sip:,.2f}",
 
     )

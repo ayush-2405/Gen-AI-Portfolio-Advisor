@@ -1,18 +1,20 @@
-# app.py (Part 1)
-
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
 import numpy as np
 
 from config import Config
-import ui.dashboard
-print(ui.dashboard.__file__)
 from market.prices import (
     download_prices,
     download_benchmark,
     latest_prices,
     get_company_info,
     daily_returns,
+)
+from market.news import (
+    recent_portfolio_news,
+)
+from market.sentiment import (
+    SentimentAnalyzer,
 )
 
 from portfolio.loader import (
@@ -46,6 +48,10 @@ from analytics.benchmark import (
 
 from analytics.optimizer import (
     PortfolioOptimizer,
+)
+
+from analytics.investment_quality import (
+    investment_quality_summary,
 )
 
 from analytics.montecarlo import (
@@ -98,17 +104,11 @@ st.set_page_config(
 # LANDING PAGE
 ####################################################################################
 
-st.title("📈 GenAI Portfolio Advisor")
+st.title("GenAI Portfolio Advisor")
 
 st.markdown(
     """
-Upload a portfolio or load a demo portfolio.
-
-Supports:
-
-- CSV Upload
-- Manual Entry (coming soon)
-- Demo Portfolio
+Upload your portfolio in CSV format.
 """
 )
 
@@ -121,8 +121,8 @@ with left:
         type=["csv"],
     )
 
-    demo = st.button(
-        "Load Demo Portfolio"
+    run = st.button(
+        "Analyze Portfolio",
     )
 
 with right:
@@ -184,70 +184,10 @@ period = st.selectbox(
 )
 
 ####################################################################################
-# DEMO PORTFOLIO
+# Analyse PORTFOLIO
 ####################################################################################
 
-if demo:
-
-    portfolio_df = pd.DataFrame(
-
-        {
-
-            "ticker": [
-
-                "AAPL",
-                "MSFT",
-                "NVDA",
-                "GOOGL",
-                "AMZN",
-                "META",
-                "TSLA",
-                "BRK-B",
-                "JPM",
-                "V",
-                "JNJ",
-                "PG",
-                "KO",
-                "XOM",
-                "CVX",
-                "PEP",
-                "UNH",
-                "HD",
-                "COST",
-                "AVGO",
-
-            ],
-
-            "shares": [
-
-                20,
-                15,
-                10,
-                8,
-                12,
-                6,
-                5,
-                4,
-                18,
-                14,
-                16,
-                18,
-                30,
-                22,
-                15,
-                20,
-                7,
-                10,
-                8,
-                4,
-
-            ],
-
-        }
-
-    )
-
-elif uploaded is not None:
+if run:
 
     portfolio_df = load_portfolio(
         uploaded,
@@ -437,6 +377,37 @@ bench = benchmark_summary(
     beta,
 )
 
+effective_finnhub_key = finnhub_key or Config.FINNHUB_API_KEY
+company_names = portfolio.set_index("ticker")["name"].to_dict()
+news = pd.DataFrame()
+news_sentiment = {
+    "Average News Sentiment": np.nan,
+    "News Sentiment Label": "Unavailable",
+    "News Articles": 0,
+}
+
+with st.spinner("Downloading recent news..."):
+
+    news = recent_portfolio_news(
+        tickers,
+        effective_finnhub_key,
+        days=14,
+        limit_per_ticker=3,
+        market=market,
+        company_names=company_names,
+    )
+
+news, news_sentiment = SentimentAnalyzer().analyze_news(
+    news,
+)
+
+quality = investment_quality_summary(
+    perf,
+    risk,
+    div,
+    news_sentiment,
+)
+
 summary = portfolio_summary(
     portfolio,
 )
@@ -479,13 +450,21 @@ st.sidebar.metric(
     f"{summary['largest_weight']:.2%}",
 )
 
+st.sidebar.metric(
+    "Investment Quality",
+    f"{quality['Investment Quality Score']:.1f}",
+    quality["Investment Quality Label"],
+)
+
+st.sidebar.metric(
+    "News Sentiment",
+    news_sentiment["News Sentiment Label"],
+    f"{news_sentiment['News Articles']} articles",
+)
+
 ####################################################################################
 # MAIN DASHBOARD
 ####################################################################################
-import inspect
-
-print(render_dashboard)
-print(inspect.signature(render_dashboard))
 render_dashboard(
     portfolio,
     perf,
@@ -545,6 +524,77 @@ st.dataframe(
     use_container_width=False,
 )
 
+####################################################################################
+# INVESTMENT QUALITY AND NEWS
+####################################################################################
+
+st.header("Investment Quality")
+
+q1, q2, q3 = st.columns(3)
+
+q1.metric(
+    "Quality Score",
+    f"{quality['Investment Quality Score']:.1f}",
+    quality["Investment Quality Label"],
+)
+
+q2.metric(
+    "News Sentiment",
+    news_sentiment["News Sentiment Label"],
+    f"{news_sentiment['News Articles']} articles",
+)
+
+avg_sentiment = news_sentiment.get(
+    "Average News Sentiment",
+    np.nan,
+)
+
+q3.metric(
+    "Average Sentiment",
+    "N/A" if np.isnan(avg_sentiment) else f"{avg_sentiment:.2f}",
+)
+
+st.dataframe(
+    pd.DataFrame(
+        quality["Quality Components"],
+        index=["Score"],
+    ).T,
+    use_container_width=False,
+)
+
+if not news.empty:
+
+    news_columns = [
+        "ticker",
+        "published_at",
+        "source",
+        "headline",
+        "sentiment_label",
+        "sentiment_score",
+        "url",
+    ]
+
+    st.subheader("Recent News")
+
+    st.dataframe(
+        news[
+            [col for col in news_columns if col in news.columns]
+        ],
+        use_container_width=True,
+    )
+
+elif market == "US" and not effective_finnhub_key:
+
+    st.info(
+        "Enter your Finnhub API Key to enable recent US company news and sentiment."
+    )
+
+else:
+
+    st.info(
+        "No recent company news found for the current holdings."
+    )
+
 
 ####################################################################################
 # OPTIMIZER
@@ -583,6 +633,7 @@ st.divider()
 
 goals_page(
     summary["total_value"],
+    currency,
 )
 
 ####################################################################################
@@ -599,6 +650,8 @@ if groq_key:
         risk,
         div,
         bench,
+        news_sentiment,
+        quality,
     )
 
     advisor = PortfolioAdvisor(
@@ -708,5 +761,8 @@ st.download_button(
 st.divider()
 
 st.caption(
-    "GenAI Portfolio Advisor • Built with Streamlit, Groq, PyPortfolioOpt and Yahoo Finance"
+    "GenAI Portfolio Advisor - Built with Streamlit, Groq, PyPortfolioOpt and Yahoo Finance"
 )
+
+
+
