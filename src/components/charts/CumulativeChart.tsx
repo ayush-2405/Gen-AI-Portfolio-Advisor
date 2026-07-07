@@ -47,7 +47,10 @@ export function CumulativeChart({ data }: { data: Array<Record<string, number | 
               borderRadius: 6,
               fontSize: 12,
             }}
-            formatter={(v: number) => `${(v * 100).toFixed(2)}%`}
+            formatter={((v: unknown) => {
+              const n = typeof v === "number" ? v : Number(v);
+              return `${(n * 100).toFixed(2)}%`;
+            }) as never}
           />
           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} iconType="line" />
           {seriesKeys.map((k, i) => (

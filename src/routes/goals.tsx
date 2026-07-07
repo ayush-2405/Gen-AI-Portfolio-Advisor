@@ -266,9 +266,10 @@ function ProjectionChart({
               borderRadius: 6,
               fontSize: 12,
             }}
-            formatter={(v: number) =>
-              `${currency}${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-            }
+            formatter={((v: unknown) => {
+              const n = typeof v === "number" ? v : Number(v);
+              return `${currency}${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            }) as never}
             labelFormatter={(l) => `Year ${l}`}
           />
           <Area

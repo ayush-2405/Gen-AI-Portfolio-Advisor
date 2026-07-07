@@ -46,15 +46,17 @@ export function UploadCard({
   }
 
   return (
-    <motion.div
+    <div
       {...getRootProps()}
-      whileHover={{ scale: 1.005 }}
       className={`card-surface border-dashed cursor-pointer transition-colors ${
         isDragActive ? "border-primary/60 bg-primary/5" : "hover:border-border-strong"
       }`}
     >
       <input {...getInputProps()} />
-      <div className="p-10 flex flex-col items-center text-center">
+      <motion.div
+        whileHover={{ scale: 1.005 }}
+        className="p-10 flex flex-col items-center text-center"
+      >
         <div className="size-12 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center mb-4">
           <UploadCloud className="size-6 text-primary" />
         </div>
@@ -62,7 +64,7 @@ export function UploadCard({
         <div className="text-[12px] text-muted-foreground mt-1">
           or click to browse. Columns: <span className="font-mono">ticker, quantity</span>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

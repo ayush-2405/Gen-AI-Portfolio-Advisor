@@ -41,7 +41,10 @@ export function HorizontalBar({
               borderRadius: 6,
               fontSize: 12,
             }}
-            formatter={(v: number) => (formatValue ? formatValue(v) : v)}
+            formatter={((v: unknown) => {
+              const n = typeof v === "number" ? v : Number(v);
+              return formatValue ? formatValue(n) : n;
+            }) as never}
             cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
           <Bar dataKey={valueKey} radius={[0, 3, 3, 0]} animationDuration={600}>

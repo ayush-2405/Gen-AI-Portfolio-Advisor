@@ -33,7 +33,10 @@ export function AllocationDonut({ data, unit = "%" }: { data: Item[]; unit?: str
               borderRadius: 6,
               fontSize: 12,
             }}
-            formatter={(v: number) => `${((v / total) * 100).toFixed(2)}${unit}`}
+            formatter={((v: unknown) => {
+              const n = typeof v === "number" ? v : Number(v);
+              return `${((n / total) * 100).toFixed(2)}${unit}`;
+            }) as never}
           />
         </PieChart>
       </ResponsiveContainer>
