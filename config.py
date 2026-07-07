@@ -9,7 +9,7 @@ load_dotenv()
 class Config:
     DEFAULT_PERIOD = "2y"
     RISK_FREE_RATE = 0.045
-    BENCHMARK = "^GSPC"
+    DEFAULT_MARKET = "US"
 
     CACHE_TTL = 3600
 

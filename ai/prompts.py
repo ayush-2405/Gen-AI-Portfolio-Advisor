@@ -1,60 +1,90 @@
 # ai/prompts.py
 
+# REPLACE ENTIRE FILE
+
 SYSTEM_PROMPT = """
-You are an institutional-grade portfolio advisor.
+You are a professional CFA-level portfolio advisor.
 
-You NEVER hallucinate.
+Your responsibilities include:
 
-You ONLY use the portfolio metrics provided.
+1. Portfolio analysis
+2. Risk analysis
+3. Diversification analysis
+4. Rebalancing recommendations
+5. Sector analysis
+6. Fundamental reasoning
+7. Benchmark comparison
+8. Long-term investment advice
 
-Your goals are:
+Rules:
 
-1. Explain the portfolio.
-2. Explain risks.
-3. Explain diversification.
-4. Suggest improvements.
-5. Keep answers concise.
-6. Never invent numbers.
-7. Never recommend buying/selling solely because of sentiment.
-
-Always answer in markdown.
-
-If recommending changes, explain WHY.
+- Never hallucinate prices.
+- Use only the supplied portfolio information.
+- Mention risks.
+- Explain recommendations clearly.
+- Prefer diversification.
+- Be concise but informative.
 """
 
 
-SUMMARY_PROMPT = """
-Generate:
+def build_summary_prompt(
+    context,
+    market,
+    benchmark_name,
+):
+
+    return f"""
+Market:
+{market}
+
+Benchmark:
+{benchmark_name}
+
+Portfolio:
+
+{context}
+
+Write:
 
 1. Executive Summary
 
-2. Strengths
+2. Biggest strengths
 
-3. Weaknesses
+3. Biggest weaknesses
 
-4. Biggest Risks
+4. Diversification analysis
 
-5. Diversification Advice
+5. Risk analysis
 
-6. Rebalancing Suggestions
+6. Sector analysis
 
-7. Long-term Outlook
+7. Rebalancing suggestions
 
-Portfolio Metrics:
-
-{portfolio}
+8. Actionable recommendations
 """
 
 
-CHAT_PROMPT = """
-Portfolio Information
+def build_chat_prompt(
+    context,
+    market,
+    benchmark_name,
+    question,
+):
 
-{portfolio}
+    return f"""
+Market:
+{market}
 
-User Question
+Benchmark:
+{benchmark_name}
+
+Portfolio:
+
+{context}
+
+Question:
 
 {question}
 
-Answer using ONLY the supplied portfolio information.
-Do not fabricate metrics.
+Answer professionally.
 """

@@ -2,15 +2,23 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
+from markets import normalize_tickers
+
 
 @st.cache_data(ttl=3600)
 def download_prices(
     tickers,
     period="2y",
     interval="1d",
+    market="US",
 ):
 
-    df = yf.download(
+    tickers = normalize_tickers(
+        tickers,
+        market,
+    )
+
+    data = yf.download(
         tickers=tickers,
         period=period,
         interval=interval,
@@ -20,28 +28,59 @@ def download_prices(
         threads=True,
     )
 
-    if isinstance(df.columns, pd.MultiIndex):
-        prices = df["Close"]
-    elif "Close" in df.columns:
-        prices = df["Close"]
+    if data.empty:
+        raise ValueError(
+            "Unable to download price data."
+        )
+
+    if isinstance(data.columns, pd.MultiIndex):
+
+        if "Close" in data.columns.levels[0]:
+            prices = data["Close"]
+        elif "Adj Close" in data.columns.levels[0]:
+            prices = data["Adj Close"]
+        else:
+            prices = data.xs(
+                data.columns.levels[0][0],
+                axis=1,
+                level=0,
+            )
+
     else:
-        prices = df
 
-    if isinstance(prices, pd.Series):
-        prices = prices.to_frame()
+        if "Close" in data.columns:
+            prices = data[["Close"]]
+            prices.columns = tickers
 
-    prices = prices.ffill().dropna(how="all")
+        elif "Adj Close" in data.columns:
+            prices = data[["Adj Close"]]
+            prices.columns = tickers
+
+        else:
+            prices = data
+
+    prices = prices.ffill()
+
+    prices = prices.dropna(
+        axis=1,
+        how="all",
+    )
+
+    if prices.empty:
+        raise ValueError(
+            "No valid tickers found."
+        )
 
     return prices
 
 
 @st.cache_data(ttl=3600)
 def download_benchmark(
-    benchmark="^GSPC",
+    benchmark,
     period="2y",
 ):
 
-    df = yf.download(
+    data = yf.download(
         benchmark,
         period=period,
         auto_adjust=True,
@@ -49,12 +88,22 @@ def download_benchmark(
         threads=False,
     )
 
-    if isinstance(df.columns, pd.MultiIndex):
-        series = df["Close"].iloc[:, 0]
-    elif "Close" in df.columns:
-        series = df["Close"]
+    if data.empty:
+        raise ValueError(
+            "Unable to download benchmark."
+        )
+
+    if isinstance(data.columns, pd.MultiIndex):
+
+        series = data["Close"].iloc[:, 0]
+
+    elif "Close" in data.columns:
+
+        series = data["Close"]
+
     else:
-        series = df.squeeze()
+
+        series = data.squeeze()
 
     series.name = benchmark
 
@@ -62,35 +111,86 @@ def download_benchmark(
 
 
 @st.cache_data(ttl=86400)
-def get_company_info(ticker):
+def get_company_info(
+    ticker,
+):
 
     try:
-        info = yf.Ticker(ticker).info
+
+        info = yf.Ticker(
+            ticker
+        ).info
+
     except Exception:
+
         info = {}
 
     return {
+
         "ticker": ticker,
-        "name": info.get("shortName", ticker),
-        "sector": info.get("sector", "Unknown"),
-        "industry": info.get("industry", "Unknown"),
-        "country": info.get("country", "Unknown"),
-        "market_cap": info.get("marketCap"),
-        "beta": info.get("beta"),
-        "dividend_yield": info.get("dividendYield"),
+
+        "name": info.get(
+            "shortName",
+            ticker,
+        ),
+
+        "sector": info.get(
+            "sector",
+            "Unknown",
+        ),
+
+        "industry": info.get(
+            "industry",
+            "Unknown",
+        ),
+
+        "country": info.get(
+            "country",
+            "Unknown",
+        ),
+
+        "market_cap": info.get(
+            "marketCap",
+            None,
+        ),
+
+        "beta": info.get(
+            "beta",
+            None,
+        ),
+
+        "dividend_yield": info.get(
+            "dividendYield",
+            None,
+        ),
+
     }
 
 
-def latest_prices(price_df):
+def latest_prices(
+    prices,
+):
 
-    return price_df.ffill().iloc[-1]
-
-
-def daily_returns(price_df):
-
-    return price_df.pct_change().dropna()
+    return prices.ffill().iloc[-1]
 
 
-def cumulative_returns(price_df):
+def daily_returns(
+    prices,
+):
 
-    return price_df.ffill() / price_df.ffill().iloc[0] - 1
+    return (
+        prices
+        .pct_change()
+        .dropna()
+    )
+
+
+def cumulative_returns(
+    prices,
+):
+
+    return (
+        prices
+        / prices.iloc[0]
+        - 1
+    )

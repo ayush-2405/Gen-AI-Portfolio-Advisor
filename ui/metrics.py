@@ -25,7 +25,7 @@ def metric_cards(
 
     c2.metric(
 
-        "Sharpe",
+        "Sharpe Ratio",
 
         f"{performance['Sharpe Ratio']:.2f}",
 
@@ -33,7 +33,7 @@ def metric_cards(
 
     c3.metric(
 
-        "Risk Score",
+        "Portfolio Beta",
 
         f"{risk['Beta']:.2f}",
 
@@ -41,7 +41,7 @@ def metric_cards(
 
     c4.metric(
 
-        "Diversification",
+        "Diversification Score",
 
         f"{diversification['Diversification Score']:.1f}",
 

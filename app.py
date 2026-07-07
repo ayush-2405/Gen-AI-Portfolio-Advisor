@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 
 from config import Config
-
+import ui.dashboard
+print(ui.dashboard.__file__)
 from market.prices import (
     download_prices,
     download_benchmark,
@@ -136,19 +137,33 @@ with right:
         type="password",
     )
 
-benchmark = st.selectbox(
+from markets import (
+    MARKETS,
+    benchmark_options,
+    default_benchmark,
+    currency_symbol,
+)
 
+market = st.selectbox(
+    "Market",
+    list(MARKETS.keys()),
+)
+
+benchmark_dict = benchmark_options(
+    market,
+)
+
+benchmark_name = st.selectbox(
     "Benchmark",
+    list(benchmark_dict.keys()),
+)
 
-    [
+benchmark = benchmark_dict[
+    benchmark_name
+]
 
-        "^GSPC",
-        "^IXIC",
-        "^DJI",
-        "^NSEI",
-
-    ],
-
+currency = currency_symbol(
+    market,
 )
 
 period = st.selectbox(
@@ -235,7 +250,8 @@ if demo:
 elif uploaded is not None:
 
     portfolio_df = load_portfolio(
-        uploaded
+        uploaded,
+        market=market,
     )
 
 else:
@@ -261,6 +277,8 @@ with st.spinner(
             tickers,
 
             period,
+            
+            market=market,
 
         )
 
@@ -444,9 +462,8 @@ st.sidebar.title("Portfolio Summary")
 
 st.sidebar.metric(
     "Portfolio Value",
-    f"${summary['total_value']:,.2f}",
+    f"{currency}{summary['total_value']:,.2f}",
 )
-
 st.sidebar.metric(
     "Holdings",
     summary["num_holdings"],
@@ -465,7 +482,10 @@ st.sidebar.metric(
 ####################################################################################
 # MAIN DASHBOARD
 ####################################################################################
+import inspect
 
+print(render_dashboard)
+print(inspect.signature(render_dashboard))
 render_dashboard(
     portfolio,
     perf,
@@ -473,7 +493,9 @@ render_dashboard(
     div,
     cumulative,
     corr,
+    market,
 )
+
 
 ####################################################################################
 # PERFORMANCE
@@ -488,14 +510,14 @@ st.dataframe(
         perf,
         index=["Value"],
     ).T,
-    use_container_width=True,
+    use_container_width=False,
 )
 
 ####################################################################################
 # RISK
 ####################################################################################
 
-st.divider()
+# st.divider()
 
 st.header("Risk Metrics")
 
@@ -504,14 +526,14 @@ st.dataframe(
         risk,
         index=["Value"],
     ).T,
-    use_container_width=True,
+    use_container_width=False,
 )
 
 ####################################################################################
 # BENCHMARK
 ####################################################################################
 
-st.divider()
+# st.divider()
 
 st.header("Benchmark Metrics")
 
@@ -520,7 +542,7 @@ st.dataframe(
         bench,
         index=["Value"],
     ).T,
-    use_container_width=True,
+    use_container_width=False,
 )
 
 
@@ -591,6 +613,8 @@ if groq_key:
 
         summary_text = advisor.generate_summary(
             context,
+            market,
+            benchmark_name,
         )
 
     st.markdown(summary_text)
@@ -600,6 +624,8 @@ if groq_key:
     render_chat(
         advisor,
         context,
+        market,
+        benchmark_name
     )
 
 else:
@@ -641,16 +667,16 @@ display_df = portfolio[
 format_dict = {}
 
 if "latest_price" in display_df.columns:
-    format_dict["latest_price"] = "${:,.2f}"
+    format_dict["latest_price"] = f"{currency}" + "{:,.2f}"
 
 if "market_value" in display_df.columns:
-    format_dict["market_value"] = "${:,.2f}"
+    format_dict["market_value"] = f"{currency}" + "{:,.2f}"
 
 if "weight" in display_df.columns:
     format_dict["weight"] = "{:.2%}"
 
 if "market_cap" in display_df.columns:
-    format_dict["market_cap"] = "${:,.0f}"
+    format_dict["market_cap"] = f"{currency}" + "{:,.0f}"
 
 if "beta" in display_df.columns:
     format_dict["beta"] = "{:.2f}"

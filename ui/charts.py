@@ -9,11 +9,11 @@ def sector_pie(portfolio):
         names="sector",
         values="weight",
         hole=0.45,
-        title="Sector Allocation"
+        title="Sector Allocation",
     )
 
     fig.update_layout(
-        legend_title="Sector"
+        legend_title="Sector",
     )
 
     return fig
@@ -26,7 +26,7 @@ def marketcap_pie(portfolio):
         names="market_cap_bucket",
         values="weight",
         hole=0.45,
-        title="Market Cap Allocation"
+        title="Market Cap Allocation",
     )
 
     return fig
@@ -36,14 +36,21 @@ def holdings_bar(portfolio):
 
     df = portfolio.sort_values(
         "market_value",
-        ascending=False
+        ascending=False,
     )
 
     fig = px.bar(
         df,
         x="ticker",
         y="market_value",
-        title="Holding Values"
+        title="Holding Values",
+    )
+
+    fig.update_layout(
+        xaxis_title="Ticker",
+        yaxis_title="Market Value",
+        xaxis_tickangle=-45,
+        margin=dict(b=120),
     )
 
     return fig
@@ -53,14 +60,25 @@ def weight_bar(portfolio):
 
     df = portfolio.sort_values(
         "weight",
-        ascending=False
+        ascending=False,
     )
 
     fig = px.bar(
         df,
         x="ticker",
         y="weight",
-        title="Portfolio Weights"
+        title="Portfolio Weights",
+    )
+
+    fig.update_layout(
+        xaxis_title="Ticker",
+        yaxis_title="Portfolio Weight",
+        xaxis_tickangle=-45,
+        margin=dict(b=120),
+    )
+
+    fig.update_yaxes(
+        tickformat=".1%",
     )
 
     return fig
@@ -72,7 +90,14 @@ def beta_bar(portfolio):
         portfolio,
         x="ticker",
         y="beta",
-        title="Individual Stock Betas"
+        title="Individual Stock Betas",
+    )
+
+    fig.update_layout(
+        xaxis_title="Ticker",
+        yaxis_title="Beta",
+        xaxis_tickangle=-45,
+        margin=dict(b=120),
     )
 
     return fig
@@ -84,7 +109,7 @@ def correlation_heatmap(correlation):
         correlation,
         text_auto=".2f",
         aspect="auto",
-        title="Correlation Matrix"
+        title="Correlation Matrix",
     )
 
     return fig
@@ -97,29 +122,22 @@ def cumulative_returns_chart(cumulative):
     for col in cumulative.columns:
 
         fig.add_trace(
-
             go.Scatter(
-
                 x=cumulative.index,
-
                 y=cumulative[col],
-
                 mode="lines",
-
-                name=col
-
+                name=col,
             )
-
         )
 
     fig.update_layout(
-
         title="Portfolio vs Benchmark",
-
         xaxis_title="Date",
+        yaxis_title="Cumulative Return",
+    )
 
-        yaxis_title="Cumulative Return"
-
+    fig.update_yaxes(
+        tickformat=".1%",
     )
 
     return fig
@@ -130,23 +148,20 @@ def drawdown_chart(drawdown):
     fig = go.Figure()
 
     fig.add_trace(
-
         go.Scatter(
-
             x=drawdown.index,
-
             y=drawdown,
-
-            fill="tozeroy"
-
+            fill="tozeroy",
         )
-
     )
 
     fig.update_layout(
+        title="Drawdown",
+        yaxis_title="Drawdown",
+    )
 
-        title="Drawdown"
-
+    fig.update_yaxes(
+        tickformat=".1%",
     )
 
     return fig
@@ -155,21 +170,22 @@ def drawdown_chart(drawdown):
 def risk_return_scatter(metrics):
 
     fig = px.scatter(
-
         metrics,
-
         x="Annual Volatility",
-
         y="Annual Return",
-
-        text="Asset"
-
+        text="Asset",
     )
 
     fig.update_traces(
+        textposition="top center",
+    )
 
-        textposition="top center"
+    fig.update_xaxes(
+        tickformat=".1%",
+    )
 
+    fig.update_yaxes(
+        tickformat=".1%",
     )
 
     return fig
