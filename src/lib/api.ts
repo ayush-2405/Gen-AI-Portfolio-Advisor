@@ -3,7 +3,7 @@ import axios, { AxiosError } from "axios";
 export const API_BASE_URL =
   (typeof window !== "undefined" && window.localStorage?.getItem("apiBaseUrl")) ||
   (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL ||
-  "http://localhost:8000";
+  "https://gen-ai-portfolio-advisor-1.onrender.com/";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
