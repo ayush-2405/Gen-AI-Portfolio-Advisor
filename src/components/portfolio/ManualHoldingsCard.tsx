@@ -71,8 +71,8 @@ export function ManualHoldingsCard({
         {holdings.map((holding, index) => (
           <div
             key={index}
-            className="grid grid-cols-[2fr_1.3fr_auto] gap-3 items-center"
-          >
+            className="grid grid-cols-1 sm:grid-cols-[2fr_1.3fr_auto] gap-3 items-stretch"
+        >
             <input
               type="text"
               placeholder="Ticker"
@@ -80,7 +80,7 @@ export function ManualHoldingsCard({
               onChange={(e) =>
                 updateHolding(index, "ticker", e.target.value)
               }
-              className="bg-surface-2 border border-border rounded-md px-3 py-2 text-sm uppercase focus:outline-none focus:border-primary/50"
+              className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm uppercase focus:outline-none focus:border-primary/50"
             />
 
             <input
@@ -98,12 +98,12 @@ export function ManualHoldingsCard({
                   addHolding();
                 }
               }}
-              className="bg-surface-2 border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+              className="w-full bg-surface-2 border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
             />
 
             <button
               onClick={() => removeHolding(index)}
-              className="size-10 rounded-md border border-border bg-surface-2 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400 transition-colors flex items-center justify-center"
+              className="h-10 w-full sm:w-10 rounded-md border border-border bg-surface-2 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400 transition-colors flex items-center justify-center"
               aria-label="Delete Holding"
             >
               <Trash2 className="size-4" />
@@ -114,7 +114,7 @@ export function ManualHoldingsCard({
 
       <button
         onClick={addHolding}
-        className="mt-4 inline-flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm hover:border-primary/40 hover:text-primary transition-colors"
+        className="mt-4 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm hover:border-primary/40 hover:text-primary transition-colors"
       >
         <Plus className="size-4" />
         Add Holding

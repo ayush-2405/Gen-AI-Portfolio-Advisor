@@ -122,7 +122,7 @@ function RootComponent() {
               <Header />
 
               <main className="flex-1 overflow-auto scrollbar-thin">
-                <div className="max-w-[1600px] mx-auto p-6">
+                <div className="max-w-[1600px] mx-auto px-4 py-4 md:p-6">
                   <Outlet />
                 </div>
               </main>
