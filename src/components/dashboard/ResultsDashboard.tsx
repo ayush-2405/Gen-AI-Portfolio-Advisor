@@ -169,11 +169,11 @@ export function ResultsDashboard({ data }: { data: AnalysisResponse }) {
               {typeof newsSentiment?.score === "number" ? (newsSentiment.score as number).toFixed(2) : "—"}
             </div>
           </div>
-          <div className="space-y-1.5">
+          {/* <div className="space-y-1.5">
             <SentimentBar label="Positive" value={Number(newsSentiment?.positive ?? 0)} tone="var(--positive)" />
             <SentimentBar label="Neutral" value={Number(newsSentiment?.neutral ?? 0)} tone="var(--muted-foreground)" />
             <SentimentBar label="Negative" value={Number(newsSentiment?.negative ?? 0)} tone="var(--negative)" />
-          </div>
+          </div> */}
         </Card>
       </div>
 
@@ -216,29 +216,51 @@ export function ResultsDashboard({ data }: { data: AnalysisResponse }) {
         </Card>
         <Card
           title="Monte Carlo Simulation"
-          subtitle="1000 paths · 1-year horizon"
+          subtitle="10000 paths · 1-year horizon"
           delay={0.1}
           right={
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Median</div>
               <div className="text-sm font-mono">
-                {fmtCurrency(Number(monteCarlo.summary?.median ?? 0), currency)}
+                {fmtCurrency(Number(monteCarlo.summary?.Median ?? 0), currency)}
               </div>
             </div>
           }
         >
-          <MonteCarloChart paths={monteCarlo.paths as Array<Record<string, number | null>>} />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-            {Object.entries(monteCarlo.summary || {}).map(([k, v]) => (
-              <div key={k} className="rounded-md border border-border bg-surface-2 px-3 py-2">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {k.replace(/_/g, " ")}
+          <MonteCarloChart
+          paths={monteCarlo.paths as Array<Record<string, number | null>>}
+          bands={monteCarlo.bands as Array<{
+            day: number;
+            mean: number;
+            median: number;
+            p5: number;
+            p95: number;
+          }>}
+        />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+            {Object.entries(monteCarlo.summary || {}).map(([k, v]) => {
+              const isProbability =
+                k.toLowerCase().replace(/\s+/g, "").includes("probabilityofprofit");
+
+              return (
+                <div
+                  key={k}
+                  className="rounded-md border border-border bg-surface-2 px-3 py-2"
+                >
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {k.replace(/_/g, " ")}
+                  </div>
+
+                  <div className="text-sm font-mono tabular-nums">
+                    {typeof v !== "number"
+                      ? "—"
+                      : isProbability
+                      ? `${(v * 100).toFixed(1)}%`
+                      : fmtCurrency(v, currency)}
+                  </div>
                 </div>
-                <div className="text-sm font-mono tabular-nums">
-                  {typeof v === "number" ? fmtCurrency(v, currency) : "—"}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </div>
@@ -284,9 +306,24 @@ export function ResultsDashboard({ data }: { data: AnalysisResponse }) {
               </thead>
               <tbody className="font-mono">
                 {optimizer.rebalance.slice(0, 30).map((row, i) => {
-                  const cur = Number((row.current_weight ?? row.current ?? 0) as number);
-                  const tgt = Number((row.target_weight ?? row.target ?? 0) as number);
-                  const delta = tgt - cur;
+                  const cur = Number(
+                  row.current_weight ??
+                  row.current ??
+                  row.Current ??
+                  0
+                );
+
+                const tgt = Number(
+                  row.target_weight ??
+                  row.target ??
+                  row.Target ??
+                  0
+                );
+
+                const delta = Number(
+                  row.Difference ??
+                  (tgt - cur)
+                );
                   return (
                     <tr key={i} className="border-t border-border">
                       <td className="py-1.5 px-2">{String(row.ticker)}</td>

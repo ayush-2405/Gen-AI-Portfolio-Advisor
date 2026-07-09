@@ -124,9 +124,18 @@ export interface AnalysisResponse {
     rebalance: Array<Record<string, unknown>>;
   };
   monteCarlo: {
-    summary: Record<string, number | null>;
-    paths: Array<Record<string, number | null>>;
-  };
+  summary: Record<string, number | null>;
+
+  paths: Array<Record<string, number | null>>;
+
+  bands: Array<{
+    day: number;
+    mean: number;
+    median: number;
+    p5: number;
+    p95: number;
+  }>;
+};
 }
 
 export interface GoalResponse {
@@ -157,17 +166,135 @@ export async function analyzePortfolio(params: {
   onProgress?: (pct: number) => void;
 }): Promise<AnalysisResponse> {
   const form = new FormData();
+
   form.append("file", params.file);
   form.append("market", params.market);
   form.append("benchmark_name", params.benchmarkName);
   form.append("period", params.period);
-  if (params.finnhubKey) form.append("finnhub_key", params.finnhubKey);
-  const { data } = await api.post<AnalysisResponse>("/api/analyze", form, {
+
+  if (params.finnhubKey) {
+    form.append("finnhub_key", params.finnhubKey);
+  }
+
+  const { data } = await api.post("/api/analyze", form, {
     onUploadProgress: (e) => {
-      if (e.total && params.onProgress) params.onProgress(Math.round((e.loaded / e.total) * 100));
+      if (e.total && params.onProgress) {
+        params.onProgress(Math.round((e.loaded / e.total) * 100));
+      }
     },
   });
-  return data;
+
+  // Normalize backend response to frontend schema
+  return {
+    ...data,
+
+    performance: {
+      expected_return:
+        data.performance?.["Annual Return"] ?? 0,
+
+      annualized_return:
+        data.performance?.["Annual Return"] ?? 0,
+
+      volatility:
+        data.performance?.["Annual Volatility"] ?? 0,
+
+      sharpe:
+        data.performance?.["Sharpe Ratio"] ?? 0,
+
+      sortino:
+        data.performance?.["Sortino Ratio"] ?? 0,
+
+      max_drawdown:
+        Math.abs(data.performance?.["Max Drawdown"] ?? 0),
+    },
+    charts: {
+      ...data.charts,
+
+      cumulative: (data.charts?.cumulative ?? []).map((row: any) => ({
+        date: row.date ?? row.Date,
+        Portfolio: row.Portfolio ?? row.portfolio,
+        Benchmark: row.Benchmark ?? row.benchmark,
+      })),
+    },
+    risk: {
+      beta:
+        data.risk?.["Beta"] ?? null,
+
+      var_95:
+        data.risk?.["VaR (95%)"] ?? null,
+
+      cvar_95:
+        data.risk?.["CVaR (95%)"] ?? null,
+
+      tracking_error:
+        data.risk?.["Tracking Error"] ?? null,
+
+      downside_deviation:
+        data.risk?.["Downside Deviation"] ?? null,
+    },
+
+    diversification: {
+      diversification_score:
+        data.diversification?.["Diversification Score"] ?? null,
+
+      hhi:
+        data.diversification?.["HHI"] ?? null,
+
+      effective_holdings:
+        data.diversification?.["Effective Holdings"] ?? null,
+    },
+
+    benchmark: {
+      alpha:
+        data.benchmark?.["Alpha"] ?? null,
+
+      beta:
+        data.benchmark?.["Beta"] ?? null,
+
+      information_ratio:
+        data.risk?.["Information Ratio"] ?? null,
+    },
+
+    quality: {
+      score:
+        data.quality?.["Investment Quality Score"] ?? 0,
+
+      grade:
+        data.quality?.["Investment Quality Label"] ?? "",
+
+      breakdown:
+        data.quality?.["Quality Components"] ?? {},
+    },
+
+    newsSentiment: {
+      overall:
+        data.newsSentiment?.["News Sentiment Label"] ?? "Neutral",
+
+      score:
+        data.newsSentiment?.["Average News Sentiment"] ?? 0,
+
+      positive: 0,
+      neutral: 0,
+      negative: 0,
+    },
+    monteCarlo: {
+      summary: data.monteCarlo?.summary ?? {},
+
+      paths: data.monteCarlo?.paths ?? [],
+
+      bands: data.monteCarlo?.bands ?? [],
+    },
+    holdings:
+      (data.holdings ?? []).map((h: any) => ({
+        ...h,
+
+        quantity:
+          h.quantity ?? h.shares ?? 0,
+
+        price:
+          h.price ?? h.latest_price ?? 0,
+      })),
+  };
 }
 
 export async function askAI(params: { analysisId: string; question: string; groqKey?: string }): Promise<string> {

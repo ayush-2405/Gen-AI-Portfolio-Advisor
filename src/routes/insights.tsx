@@ -170,12 +170,13 @@ function SnapRow({ label, value }: { label: string; value: string }) {
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}
+      className={`flex items-start gap-3 w-full ${isUser ? "flex-row-reverse" : ""}`}
     >
       <div
         className={`size-7 shrink-0 rounded-md flex items-center justify-center border ${
@@ -186,21 +187,26 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       >
         {isUser ? <User className="size-3.5" /> : <Sparkles className="size-3.5" />}
       </div>
-      <div className={`max-w-[85%] ${isUser ? "text-right" : ""}`}>
-        {isUser ? (
-          <div className="inline-block bg-primary text-primary-foreground rounded-lg px-3 py-2 text-sm">
-            {message.content}
-          </div>
-        ) : (
-          <div className="md-body">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
-        )}
+      <div
+  className={`flex-1 min-w-0 flex ${isUser ? "justify-end" : "justify-start"}`}
+>
+  {isUser ? (
+    <div className="max-w-[85%] rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm whitespace-pre-wrap break-words">
+      {message.content}
+    </div>
+  ) : (
+    <div className="w-full">
+      <div className="rounded-lg border border-border bg-surface-2 px-4 py-3 w-full">
+        <div className="md-body w-full">
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+        </div>
       </div>
+    </div>
+  )}
+</div>
     </motion.div>
   );
 }
-
 function TypingIndicator() {
   return (
     <div className="flex gap-3">

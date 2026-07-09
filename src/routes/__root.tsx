@@ -13,7 +13,9 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { AnalysisProvider } from "@/context/AnalysisContext";
-
+import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -112,18 +114,42 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AnalysisProvider>
-        <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
-          <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            <Header />
-            <main className="flex-1 overflow-auto scrollbar-thin">
-              <div className="max-w-[1600px] mx-auto p-6">
-                <Outlet />
-              </div>
-            </main>
-          </div>
-        </div>
+        <SidebarProvider>
+          <AppLayout />
+        </SidebarProvider>
       </AnalysisProvider>
     </QueryClientProvider>
+  );
+}
+
+function AppLayout() {
+  const isMobile = useIsMobile();
+  const { open, setOpen } = useSidebar();
+
+  return (
+    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
+
+      {/* Desktop Sidebar */}
+      {!isMobile && <Sidebar />}
+
+      {/* Mobile Sidebar */}
+      {isMobile && (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent side="left" className="p-0 w-60">
+            <Sidebar />
+          </SheetContent>
+        </Sheet>
+      )}
+
+      <div className="flex flex-1 min-w-0 flex-col">
+        <Header />
+
+        <main className="flex-1 overflow-auto scrollbar-thin">
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-4 md:px-6 lg:px-8">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }

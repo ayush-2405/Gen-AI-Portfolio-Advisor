@@ -44,9 +44,7 @@ app = FastAPI(title="GenAI Portfolio Advisor API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://gen-ai-portfolio-advisor.vercel.app",
+        "*"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -123,9 +121,18 @@ def build_payload(
     opt_weights, opt_perf = optimizer.max_sharpe()
     rebalance_table = rebalance(portfolio, opt_weights).reset_index().rename(columns={"index": "ticker"})
 
-    simulator = MonteCarloSimulator(port_returns, simulations=1000, days=252)
+    simulator = MonteCarloSimulator(port_returns, simulations=10000, days=252)
     simulation = simulator.simulate(summary["total_value"])
-    sampled_paths = simulation.iloc[:, :80].reset_index().rename(columns={"index": "day"})
+
+    # Show only a subset of paths in frontend
+    sampled_paths = (
+        simulation.iloc[:, :40]
+        .reset_index()
+        .rename(columns={"index": "day"})
+    )
+
+    # Daily confidence statistics
+    bands = simulator.bands(simulation)
 
     cumulative_display = cumulative.copy()
     cumulative_display.index = cumulative_display.index.astype(str)
@@ -169,8 +176,13 @@ def build_payload(
             "rebalance": clean_records(rebalance_table),
         },
         "monteCarlo": {
-            "summary": clean_dict(simulator.summary(simulation)),
+            "summary": clean_dict(
+                simulator.summary(simulation)
+            ),
+
             "paths": clean_records(sampled_paths),
+
+            "bands": clean_records(bands),
         },
     }
 
