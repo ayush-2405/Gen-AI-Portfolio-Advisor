@@ -1,8 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LineChart, Sparkles, Target, Info, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
+
 import { useSidebar } from "@/context/SidebarContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
+
 const items = [
   { to: "/", label: "Analyze Portfolio", icon: LineChart },
   { to: "/insights", label: "AI Insights", icon: Sparkles },
@@ -10,12 +17,14 @@ const items = [
   { to: "/about", label: "About", icon: Info },
 ] as const;
 
-export function Sidebar() {
+function SidebarContent() {
   const pathname = useRouterState({
     select: (s) => s.location.pathname,
   });
+
   const { setOpen } = useSidebar();
   const isMobile = useIsMobile();
+
   return (
     <aside className="w-60 h-full border-r border-border bg-surface flex flex-col">
       <div className="h-14 flex items-center gap-2 px-4 border-b border-border">
@@ -50,7 +59,7 @@ export function Sidebar() {
               {active && (
                 <motion.span
                   layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-md border border-primary/25 bg-primary/10"
+                  className="absolute inset-0 rounded-md bg-primary/10 border border-primary/25"
                   transition={{
                     type: "spring",
                     stiffness: 400,
@@ -90,4 +99,24 @@ export function Sidebar() {
       </div>
     </aside>
   );
+}
+
+export function Sidebar() {
+  const isMobile = useIsMobile();
+  const { open, setOpen } = useSidebar();
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent
+          side="left"
+          className="w-60 p-0 border-r border-border bg-surface"
+        >
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return <SidebarContent />;
 }

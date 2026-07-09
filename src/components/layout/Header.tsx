@@ -7,7 +7,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSidebar } from "@/context/SidebarContext";
 export function Header() {
   const { analysis, lastUpdated } = useAnalysis();
-  const [open, setOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { setOpen } = useSidebar();
   const [urlDraft, setUrlDraft] = useState(API_BASE_URL);
 
   const { data, isError, isLoading } = useQuery({
@@ -25,7 +26,7 @@ export function Header() {
       <div className="flex items-center gap-3">
         {isMobile && (
           <button
-  onClick={() => setOpen(true)}
+  onClick={() => setSettingsOpen((v) => !v)}
   className="size-9 rounded-md border border-border bg-surface-2 hover:bg-secondary flex items-center justify-center transition-colors"
 >
   <Menu className="size-5" />
@@ -65,7 +66,7 @@ export function Header() {
           >
             <Settings className="size-4" />
           </button>
-          {open && (
+          {settingsOpen && (
             <div className="absolute right-0 top-10 z-50 w-80 card-surface p-4 shadow-2xl">
               <div className="text-xs font-medium mb-2">API Base URL</div>
               <input
@@ -75,7 +76,7 @@ export function Header() {
               />
               <div className="mt-2 flex justify-end gap-2">
                 <button
-                  onClick={() => setOpen(false)}
+                  onClick={() => setSettingsOpen(false)}
                   className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-foreground"
                 >
                   Cancel
