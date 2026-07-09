@@ -2,14 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { getHealth, API_BASE_URL } from "@/lib/api";
 import { useAnalysis } from "@/context/AnalysisContext";
 import { useState } from "react";
-import { Menu, Settings } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSidebar } from "@/context/SidebarContext";
 export function Header() {
   const { analysis, lastUpdated } = useAnalysis();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const { setOpen } = useSidebar();
-  const [urlDraft, setUrlDraft] = useState(API_BASE_URL);
 
   const { data, isError, isLoading } = useQuery({
     queryKey: ["health"],
@@ -26,17 +24,15 @@ export function Header() {
       <div className="flex items-center gap-3">
         {isMobile && (
           <button
-  onClick={() => setSettingsOpen((v) => !v)}
-  className="size-9 rounded-md border border-border bg-surface-2 hover:bg-secondary flex items-center justify-center transition-colors"
->
-  <Menu className="size-5" />
-</button>
+            onClick={() => setOpen(true)}
+            className="size-9 rounded-md border border-border bg-surface-2 hover:bg-secondary flex items-center justify-center transition-colors"
+          >
+            <Menu className="size-5" />
+          </button>
         )}
 
         <div>
-          <div className="text-sm md:text-[15px] font-semibold tracking-tight">
-            Gen AI Portfolio Advisor
-          </div>
+          
 
           <div className="hidden sm:block text-[11px] text-muted-foreground font-mono">
             {analysis
@@ -57,42 +53,6 @@ export function Header() {
           <span className="hidden sm:inline text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
             {isLoading ? "Checking" : online ? "Backend Online" : "Backend Offline"}
           </span>
-        </div>
-        <div className="relative">
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="size-8 rounded-md border border-border bg-surface-2 hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
-            aria-label="Settings"
-          >
-            <Settings className="size-4" />
-          </button>
-          {settingsOpen && (
-            <div className="absolute right-0 top-10 z-50 w-80 card-surface p-4 shadow-2xl">
-              <div className="text-xs font-medium mb-2">API Base URL</div>
-              <input
-                value={urlDraft}
-                onChange={(e) => setUrlDraft(e.target.value)}
-                className="w-full rounded-md bg-surface-2 border border-border px-2 py-1.5 text-xs font-mono focus:outline-none focus:border-primary/50"
-              />
-              <div className="mt-2 flex justify-end gap-2">
-                <button
-                  onClick={() => setSettingsOpen(false)}
-                  className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-foreground"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    localStorage.setItem("apiBaseUrl", urlDraft.trim());
-                    window.location.reload();
-                  }}
-                  className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground font-medium"
-                >
-                  Save & reload
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </header>

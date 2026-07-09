@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LineChart, Sparkles, Target, Info, TrendingUp } from "lucide-react";
+import { LineChart, Sparkles, Target, Info, TrendingUp, Copyright } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useSidebar } from "@/context/SidebarContext";
@@ -28,17 +28,17 @@ function SidebarContent() {
   return (
     <aside className="w-60 h-full border-r border-border bg-surface flex flex-col">
       <div className="h-14 flex items-center gap-2 px-4 border-b border-border">
-        <div className="size-8 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center">
+        {/* <div className="size-8 rounded-md bg-primary/15 border border-primary/30 flex items-center justify-center">
           <TrendingUp className="size-4 text-primary" />
-        </div>
+        </div> */}
 
         <div className="leading-tight">
-          <div className="text-[13px] font-semibold tracking-tight">
-            Portfolio Advisor
+          <div className="text-[15px] font-semibold tracking-tight">
+            Gen AI Portfolio Advisor
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          {/* <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
             Gen AI
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -87,15 +87,10 @@ function SidebarContent() {
       </nav>
 
       <div className="mt-auto p-3 border-t border-border">
-        <div className="rounded-md border border-border bg-surface-2 p-3">
-          <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-            Disclaimer
-          </div>
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+         <span>Ayush Singh</span>
 
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Research & educational tool. Not investment advice.
-          </p>
-        </div>
+        </div>  
       </div>
     </aside>
   );

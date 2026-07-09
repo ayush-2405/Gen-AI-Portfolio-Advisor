@@ -65,7 +65,7 @@ function InsightsPage() {
   };
 
   return (
-    <div className="space-y-6 grid grid-cols-1 xl:grid-cols-3 xl:gap-4 xl:space-y-0">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
       <div className="xl:col-span-2 space-y-4">
         <div>
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">AI Insights</div>
@@ -76,8 +76,8 @@ function InsightsPage() {
           </p>
         </div>
 
-        <Card padded={false} className="flex flex-col h-[calc(100vh-260px)] min-h-[520px]">
-          <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-thin px-5 py-4 space-y-4">
+        <Card padded={false} className="flex flex-col h-full min-h-0">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin px-5 py-4 space-y-5">
             {messages.length === 0 && (
               <div className="text-center py-8">
                 <div className="size-10 mx-auto rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center mb-3">
@@ -92,7 +92,7 @@ function InsightsPage() {
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="text-[11px] px-2.5 py-1.5 rounded-full border border-border bg-surface-2 hover:border-primary/40 hover:text-primary transition-colors"
+                      className="rounded-full border border-border bg-surface-2 px-3 py-2 text-xs hover:border-primary/40 transition-colors"
                     >
                       {s}
                     </button>
@@ -105,7 +105,7 @@ function InsightsPage() {
             ))}
             {chat.isPending && <TypingIndicator />}
           </div>
-          <div className="border-t border-border p-3 flex items-end gap-2">
+          <div className="border-t border-border p-3 flex gap-2 sticky bottom-0 bg-background">
             <textarea
               rows={1}
               value={input}
@@ -130,7 +130,7 @@ function InsightsPage() {
         </Card>
       </div>
 
-      <div className="space-y-4">
+      <div className="hidden xl:block space-y-4">
         <Card title="Portfolio Snapshot" subtitle="Context passed to the advisor">
           <dl className="space-y-2 text-xs">
             <SnapRow label="Value" value={`${analysis.currency}${Number(analysis.summary.total_value ?? 0).toLocaleString()}`} />
@@ -179,30 +179,25 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       className={`flex items-start gap-3 w-full ${isUser ? "flex-row-reverse" : ""}`}
     >
       <div
-        className={`size-7 shrink-0 rounded-md flex items-center justify-center border ${
-          isUser
-            ? "bg-primary/15 border-primary/30 text-primary"
-            : "bg-surface-2 border-border text-primary"
-        }`}
-      >
-        {isUser ? <User className="size-3.5" /> : <Sparkles className="size-3.5" />}
-      </div>
-      <div
-  className={`flex-1 min-w-0 flex ${isUser ? "justify-end" : "justify-start"}`}
+  className={`max-w-[88%] ${
+    isUser ? "ml-auto" : ""
+  }`}
 >
-  {isUser ? (
-    <div className="max-w-[85%] rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm whitespace-pre-wrap break-words">
-      {message.content}
-    </div>
-  ) : (
-    <div className="w-full">
-      <div className="rounded-lg border border-border bg-surface-2 px-4 py-3 w-full">
-        <div className="md-body w-full">
-          <ReactMarkdown>{message.content}</ReactMarkdown>
-        </div>
+  <div
+    className={`rounded-xl px-4 py-3 text-sm break-words overflow-hidden ${
+      isUser
+        ? "bg-primary text-primary-foreground"
+        : "border border-border bg-surface-2"
+    }`}
+  >
+    {isUser ? (
+      message.content
+    ) : (
+      <div className="prose prose-invert prose-sm max-w-none">
+        <ReactMarkdown >{message.content}</ReactMarkdown>
       </div>
-    </div>
-  )}
+    )}
+  </div>
 </div>
     </motion.div>
   );

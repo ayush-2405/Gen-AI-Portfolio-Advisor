@@ -222,7 +222,6 @@ def markets() -> dict[str, Any]:
 async def analyze(
     file: UploadFile | None = File(None),
     manual_holdings: str | None = Form(None),
-    
     market: str = Form("US"),
     benchmark_name: str = Form("S&P 500"),
     period: str = Form("2y"),
@@ -230,27 +229,12 @@ async def analyze(
 ) -> dict[str, Any]:
     import json
 
-    if file is not None:
-        holdings = pd.read_csv(file.file)
-
-    elif manual_holdings:
-        holdings = pd.DataFrame(json.loads(manual_holdings))
-
-        holdings.rename(
-            columns={"quantity": "shares"},
-            inplace=True,
-        )
-
-        csv_buffer = io.StringIO()
-        holdings.to_csv(csv_buffer, index=False)
-        csv_buffer.seek(0)
-
-        portfolio_df = load_portfolio(csv_buffer, market)
-    else:
+    if file is None and not manual_holdings:
         raise HTTPException(
             status_code=400,
-            detail="Provide either a CSV or manual holdings."
+            detail="Provide either a CSV or manual holdings.",
         )
+
     if market not in MARKETS:
         raise HTTPException(status_code=400, detail="Unsupported market")
 
@@ -262,41 +246,79 @@ async def analyze(
     effective_finnhub_key = finnhub_key or Config.FINNHUB_API_KEY
 
     try:
+        # ---------- Load portfolio ----------
         if file is not None:
             content = await file.read()
             portfolio_df = load_portfolio(io.BytesIO(content), market)
 
+        else:
+            holdings = pd.DataFrame(json.loads(manual_holdings))
+
+            holdings.rename(
+                columns={"quantity": "shares"},
+                inplace=True,
+            )
+
+            csv_buffer = io.StringIO()
+            holdings.to_csv(csv_buffer, index=False)
+            csv_buffer.seek(0)
+
+            portfolio_df = load_portfolio(csv_buffer, market)
+
+        # ---------- Download prices ----------
         tickers = portfolio_df["ticker"].tolist()
-        prices = download_prices(tickers, period, market=market)
+        prices = download_prices(
+            tickers,
+            period,
+            market=market,
+        )
 
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
 
     available = list(prices.columns)
     missing = [ticker for ticker in tickers if ticker not in available]
-    portfolio_df = portfolio_df[portfolio_df["ticker"].isin(available)]
+
+    portfolio_df = portfolio_df[
+        portfolio_df["ticker"].isin(available)
+    ]
     tickers = portfolio_df["ticker"].tolist()
 
     if not tickers:
-        raise HTTPException(status_code=400, detail="No valid tickers were found after price download.")
+        raise HTTPException(
+            status_code=400,
+            detail="No valid tickers were found after price download.",
+        )
 
     prices = prices[tickers]
     benchmark_prices = download_benchmark(benchmark, period)
     latest = latest_prices(prices)
+
     portfolio = build_portfolio(portfolio_df, latest)
 
     metadata = [get_company_info(ticker) for ticker in tickers]
+
     portfolio = attach_company_metadata(portfolio, metadata)
+
     portfolio["market_cap_bucket"] = np.where(
         portfolio["market_cap"] > 2e11,
         "Large",
-        np.where(portfolio["market_cap"] > 2e10, "Mid", "Small"),
+        np.where(
+            portfolio["market_cap"] > 2e10,
+            "Mid",
+            "Small",
+        ),
     )
 
     asset_returns = daily_returns(prices)
     weights = portfolio["weight"].values
+
     port_returns = portfolio_returns(asset_returns, weights)
     bench_returns = benchmark_returns(benchmark_prices)
+
     beta = portfolio_beta(port_returns, bench_returns)
 
     perf = performance_summary(port_returns)
@@ -305,6 +327,7 @@ async def analyze(
     bench = benchmark_summary(port_returns, bench_returns, beta)
 
     company_names = portfolio.set_index("ticker")["name"].to_dict()
+
     news = recent_portfolio_news(
         tickers,
         effective_finnhub_key,
@@ -313,8 +336,16 @@ async def analyze(
         market=market,
         company_names=company_names,
     )
+
     news, news_sentiment = SentimentAnalyzer().analyze_news(news)
-    quality = investment_quality_summary(perf, risk, div, news_sentiment)
+
+    quality = investment_quality_summary(
+        perf,
+        risk,
+        div,
+        news_sentiment,
+    )
+
     summary = portfolio_summary(portfolio)
     corr = correlation_matrix(asset_returns)
     comparison = align_returns(port_returns, bench_returns)
@@ -339,7 +370,6 @@ async def analyze(
         cumulative=cumulative,
         missing=missing,
     )
-
 
 @app.post("/api/chat")
 def chat(request: ChatRequest) -> dict[str, str]:
