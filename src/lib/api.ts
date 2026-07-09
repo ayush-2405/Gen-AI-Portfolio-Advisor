@@ -158,28 +158,47 @@ export async function getMarkets(): Promise<MarketOption[]> {
 }
 
 export async function analyzePortfolio(params: {
-  file: File;
+  file?: File | null;
+  manualHoldings?: {
+    ticker: string;
+    quantity: number;
+  }[];
   market: string;
   benchmarkName: string;
   period: string;
-  finnhubKey?: string;
   onProgress?: (pct: number) => void;
 }): Promise<AnalysisResponse> {
   const form = new FormData();
+  if (params.file) {
+    form.append("file", params.file);
+  }
 
-  form.append("file", params.file);
+  if (
+    params.manualHoldings &&
+    params.manualHoldings.length > 0
+  ) {
+    form.append(
+      "manual_holdings",
+      JSON.stringify(
+        params.manualHoldings.filter(
+          (h) =>
+            h.ticker.trim() !== "" &&
+            Number(h.quantity) > 0
+        )
+      )
+    );
+  }
+
   form.append("market", params.market);
   form.append("benchmark_name", params.benchmarkName);
   form.append("period", params.period);
 
-  if (params.finnhubKey) {
-    form.append("finnhub_key", params.finnhubKey);
-  }
-
   const { data } = await api.post("/api/analyze", form, {
     onUploadProgress: (e) => {
       if (e.total && params.onProgress) {
-        params.onProgress(Math.round((e.loaded / e.total) * 100));
+        params.onProgress(
+          Math.round((e.loaded / e.total) * 100)
+        );
       }
     },
   });

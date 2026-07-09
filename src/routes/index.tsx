@@ -8,14 +8,13 @@ import { useAnalysis } from "@/context/AnalysisContext";
 import { UploadCard } from "@/components/portfolio/UploadCard";
 import { AnalyzePipeline } from "@/components/portfolio/AnalyzePipeline";
 import { ResultsDashboard } from "@/components/dashboard/ResultsDashboard";
-
+import { ManualHoldingsCard } from "@/components/portfolio/ManualHoldingsCard";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [{ title: "Analyze Portfolio · Gen AI Portfolio Advisor" }],
   }),
   component: AnalyzePage,
 });
-
 const PERIODS = [
   { id: "6mo", label: "6 Months" },
   { id: "1y", label: "1 Year" },
@@ -25,6 +24,12 @@ const PERIODS = [
 ] as const;
 
 function AnalyzePage() {
+  const [manualHoldings, setManualHoldings] = useState([
+  {
+    ticker: "",
+    quantity: 0,
+  },
+]);
   const { analysis, setAnalysis } = useAnalysis();
 
   const { data: markets } = useQuery({ queryKey: ["markets"], queryFn: getMarkets, retry: 0 });
@@ -48,10 +53,19 @@ function AnalyzePage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!file) throw new Error("Please select a portfolio CSV file.");
+      const validHoldings = manualHoldings.filter(
+        (h) => h.ticker.trim() !== "" && h.quantity > 0
+      );
+
+      if (!file && validHoldings.length === 0) {
+        throw new Error(
+          "Upload a CSV or enter at least one holding."
+        );
+      }
       setUploadPct(0);
       return analyzePortfolio({
         file,
+        manualHoldings: validHoldings,
         market,
         benchmarkName,
         period,
@@ -104,6 +118,10 @@ function AnalyzePage() {
           >
             <div className="lg:col-span-2 space-y-4">
               <UploadCard file={file} onFile={setFile} />
+              <ManualHoldingsCard
+                holdings={manualHoldings}
+                onChange={setManualHoldings}
+              />
               {mutation.isError && (
                 <div className="card-surface p-3 flex items-start gap-2 border-l-2 border-l-negative">
                   <AlertCircle className="size-4 text-negative shrink-0 mt-0.5" />
@@ -166,15 +184,19 @@ function AnalyzePage() {
               </div>
               <button
                 onClick={() => mutation.mutate()}
-                disabled={!file}
+                disabled={
+                  !file &&
+                  !manualHoldings.some(
+                    (h) => h.ticker.trim() && h.quantity > 0
+                  )
+                }
                 className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground font-semibold py-2.5 text-sm hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 <Play className="size-4" fill="currentColor" />
                 Analyze Portfolio
               </button>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                CSV must include <span className="font-mono">ticker</span> and{" "}
-                <span className="font-mono">quantity</span> columns.
+                Upload a CSV or manually enter holdings below
               </p>
             </div>
           </motion.div>

@@ -220,12 +220,37 @@ def markets() -> dict[str, Any]:
 
 @app.post("/api/analyze")
 async def analyze(
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
+    manual_holdings: str | None = Form(None),
+    
     market: str = Form("US"),
     benchmark_name: str = Form("S&P 500"),
     period: str = Form("2y"),
     finnhub_key: str | None = Form(None),
 ) -> dict[str, Any]:
+    import json
+
+    if file is not None:
+        holdings = pd.read_csv(file.file)
+
+    elif manual_holdings:
+        holdings = pd.DataFrame(json.loads(manual_holdings))
+
+        holdings.rename(
+            columns={"quantity": "shares"},
+            inplace=True,
+        )
+
+        csv_buffer = io.StringIO()
+        holdings.to_csv(csv_buffer, index=False)
+        csv_buffer.seek(0)
+
+        portfolio_df = load_portfolio(csv_buffer, market)
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide either a CSV or manual holdings."
+        )
     if market not in MARKETS:
         raise HTTPException(status_code=400, detail="Unsupported market")
 
@@ -237,10 +262,13 @@ async def analyze(
     effective_finnhub_key = finnhub_key or Config.FINNHUB_API_KEY
 
     try:
-        content = await file.read()
-        portfolio_df = load_portfolio(io.BytesIO(content), market=market)
+        if file is not None:
+            content = await file.read()
+            portfolio_df = load_portfolio(io.BytesIO(content), market)
+
         tickers = portfolio_df["ticker"].tolist()
         prices = download_prices(tickers, period, market=market)
+
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
